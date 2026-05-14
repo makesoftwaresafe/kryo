@@ -94,7 +94,7 @@ public class UnsafeUtil {
 	// Use a static inner class to defer initialization of direct buffer methods until first use
 	private static final class DirectBuffers {
 		// Constructor to be used for creation of ByteBuffers that use pre-allocated memory regions.
-		private static Constructor<? extends ByteBuffer> directByteBufferConstructor;
+		static Constructor<? extends ByteBuffer> directByteBufferConstructor;
 		static {
 			ByteBuffer buffer = ByteBuffer.allocateDirect(1);
 			try {
@@ -106,7 +106,7 @@ public class UnsafeUtil {
 			}
 		}
 
-		private static Method cleanerMethod, cleanMethod;
+		static Method cleanerMethod, cleanMethod;
 		static {
 			try {
 				cleanerMethod = DirectBuffer.class.getMethod("cleaner");
