@@ -26,7 +26,6 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.KryoObjectInput;
 import com.esotericsoftware.kryo.io.KryoObjectOutput;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.util.ObjectMap;
 
 import java.io.Externalizable;
 import java.io.ObjectInput;
@@ -43,7 +42,11 @@ import java.lang.reflect.Method;
  *
  * @author Robert DiFalco <robert.difalco@gmail.com> */
 public class ExternalizableSerializer extends Serializer {
-	private ObjectMap<Class, JavaSerializer> javaSerializerByType;
+	private final ClassValue<JavaSerializer> javaSerializerByType = new ClassValue<JavaSerializer>() {
+		protected JavaSerializer computeValue (Class<?> type) {
+			return isJavaSerializerRequired(type) ? new JavaSerializer() : null;
+		}
+	};
 	private KryoObjectInput objectInput = null;
 	private KryoObjectOutput objectOutput = null;
 
@@ -96,20 +99,11 @@ public class ExternalizableSerializer extends Serializer {
 	}
 
 	/** Determines if this class requires the fall-back {@code JavaSerializer}. If the class does not require any specialized Java
-	 * serialization features then null will be returned.
+	 * serialization features then null will be returned. The answer is cached, so the reflective lookup it needs is done once per
+	 * type rather than once per object.
 	 * @param type the type we wish to externalize
 	 * @return a {@code JavaSerializer} if the type requires more than simple externalization. */
-	private JavaSerializer getJavaSerializerIfRequired (Class type) {
-		JavaSerializer javaSerializer = getCachedSerializer(type);
-		if (javaSerializer == null && isJavaSerializerRequired(type)) javaSerializer = new JavaSerializer();
-		return javaSerializer;
-	}
-
-	private JavaSerializer getCachedSerializer (Class type) {
-		if (javaSerializerByType == null) {
-			javaSerializerByType = new ObjectMap();
-			return null;
-		}
+	JavaSerializer getJavaSerializerIfRequired (Class type) {
 		return javaSerializerByType.get(type);
 	}
 
